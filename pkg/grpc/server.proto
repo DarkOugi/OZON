@@ -1,0 +1,34 @@
+syntax = "proto3";
+package ozon;
+
+option go_package = "pb/";
+
+message RequestDate {
+  string date = 1;
+}
+
+message ResponseDailyValues {
+  message Value {
+    message MetaValue{
+      string NumCode = 1;
+      string CharCode = 2;
+      int64 Nominal = 3;
+      string Name = 4;
+      string Value = 5;
+      string VunitRate = 6;
+    }
+    string ID = 1;
+    MetaValue meta_value = 2;
+  }
+  string Date = 1;
+  string name = 2;
+  repeated Value Valute = 3;
+}
+
+service MockDailyValueService {
+  rpc GetDailyValue (RequestDate) returns (ResponseDailyValues);
+}
+
+
+
+

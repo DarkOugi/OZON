@@ -6,9 +6,10 @@ CREATE TABLE IF NOT EXISTS DailyValue
     ValueInfo INTEGER REFERENCES ValueInfo (NumCode) NOT NULL,
     Nominal   INTEGER CHECK ( Nominal >= 0 ),
     Value     DOUBLE PRECISION CHECK ( Value > 0 ),
-    VunitRate DOUBLE PRECISION CHECK ( VunitRate > 0 ),
     Day       DATE NOT NULL
 );
+ALTER TABLE DailyValue
+ADD CONSTRAINT dailyvalue_unique UNIQUE (ValueInfo, Day);
 -- +goose StatementEnd
 
 -- +goose Down
