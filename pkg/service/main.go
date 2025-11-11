@@ -10,11 +10,12 @@ type Repository interface {
 	GetMostPastAndLatestDate(ctx context.Context) (string, string, error)
 }
 
-//	typeSV {
-//		0 : base
-//		1 : slow
-//		2 : not available
-//	}
+//		typeSV {
+//			0 : base
+//			1 : slow
+//			2 : not available
+//	     3 : return empty xml
+//		}
 type Service struct {
 	rep    Repository
 	typeSV int

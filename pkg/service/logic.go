@@ -75,10 +75,8 @@ func (sv *Service) GetDailyValueWork(ctx context.Context, date string) ([]*entit
 	}
 	pastCompare := dateHelper.CompareDate(past)
 	latestCompare := dateHelper.CompareDate(latest)
-	fmt.Println(past)
-	fmt.Println(latest)
+
 	if pastCompare == 0 || latestCompare == 0 || latestCompare == 2 || pastCompare == 2 {
-		log.Info().Msg("THIS")
 		return []*entity.DailyValueSQL{
 			{Day: dateHelper.FutureDate()},
 		}, nil

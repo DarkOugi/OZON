@@ -2,19 +2,11 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
-	"fmt"
+	"github.com/DarkOugi/OZON/pkg/app"
 	"github.com/DarkOugi/OZON/pkg/db"
-	proto "github.com/DarkOugi/OZON/pkg/grpc/pb"
-	"github.com/DarkOugi/OZON/pkg/server"
-	"github.com/DarkOugi/OZON/pkg/service"
-	"github.com/fasthttp/router"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/valyala/fasthttp"
-	"google.golang.org/grpc"
-	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -28,64 +20,18 @@ var (
 	dbPassword = "0000"
 	dbName     = "ozondb"
 
+	serverHost = "localhost"
+
 	serverPortXml              = "8080"
 	serverPortXmlSlow          = "8081"
 	serverPortXmlNotAvailable  = "8082"
 	serverPortXmlWithoutValute = "8083"
 
-	serverPortGrpc              = "9080"
-	serverPortGrpcSlow          = "9081"
-	serverPortGrpcNotAvailable  = "9082"
-	serverPortGrpcWithoutValute = "9083"
+	serverPortGrpc              = "4080"
+	serverPortGrpcSlow          = "4081"
+	serverPortGrpcNotAvailable  = "4082"
+	serverPortGrpcWithoutValute = "4083"
 )
-
-func RunServer(pSQL *db.PostgresDB, typeSV int, port string) {
-	svXml := service.NewService(pSQL, typeSV)
-
-	srXml := server.NewXmlServer(svXml)
-
-	rXml := router.New()
-	rXml.GET("/scripts/XML_daily.asp", srXml.GetDailyValueXml)
-
-	go func() {
-		if errServer := fasthttp.ListenAndServe(fmt.Sprintf(":%s", port), rXml.Handler); errServer != nil {
-			log.Fatal().Err(errServer).Msg("server critical error")
-		}
-	}()
-}
-
-func LogInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	resp, err := handler(ctx, req)
-	msg := "log interceptor"
-	if err != nil {
-		log.Info().Str("full Method", info.FullMethod).Any("request", req).Err(err).Msg(msg)
-	} else {
-		log.Info().Str("full method", info.FullMethod).Any("request", req).Msg(msg)
-	}
-	return resp, err
-}
-
-func RunServerGrpc(host, port string, pSQL *db.PostgresDB, typeSV int) {
-	grpcServe := service.NewService(pSQL, typeSV)
-	netAddr := fmt.Sprintf("%s:%s", host, port)
-	lis, err := net.Listen("tcp", netAddr)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to listen TCP")
-	}
-	opts := make([]grpc.ServerOption, 0, 2)
-	interceptors := []grpc.UnaryServerInterceptor{
-		LogInterceptor,
-	}
-	opts = append(opts, grpc.ChainUnaryInterceptor(interceptors...))
-	grpcServer := grpc.NewServer(opts...)
-	proto.RegisterMockDailyValueServiceServer(grpcServer, server.NewProtoServer(grpcServe))
-	go func() {
-		err = grpcServer.Serve(lis)
-		if err != nil && errors.Is(err, grpc.ErrServerStopped) {
-			log.Fatal().Err(err).Msg("Error while server working: %v")
-		}
-	}()
-}
 
 func main() {
 	var err error
@@ -106,7 +52,20 @@ func main() {
 	flag.StringVar(&dbName, "dbName", dbName, "dbName pgx connect")
 
 	flag.StringVar(&serverPortXml, "serverPortXml", serverPortXml, "serverXml run in this port")
+	flag.StringVar(&serverPortXmlSlow, "serverPortXmlSlow",
+		serverPortXmlSlow, "serverPortXmlSlow run in this port")
+	flag.StringVar(&serverPortXmlNotAvailable, "serverPortXmlNotAvailable",
+		serverPortXmlNotAvailable, "serverPortXmlNotAvailable run in this port")
+	flag.StringVar(&serverPortXmlWithoutValute, "serverPortXmlWithoutValute",
+		serverPortXmlWithoutValute, "serverPortXmlWithoutValute run in this port")
+
 	flag.StringVar(&serverPortGrpc, "serverPortGrpc", serverPortGrpc, "serverGrpc run in this port")
+	flag.StringVar(&serverPortGrpcSlow, "serverPortGrpcSlow",
+		serverPortGrpcSlow, "serverPortGrpcSlow run in this port")
+	flag.StringVar(&serverPortGrpcNotAvailable, "serverPortGrpcNotAvailable",
+		serverPortGrpcNotAvailable, "serverPortGrpcNotAvailable run in this port")
+	flag.StringVar(&serverPortGrpcWithoutValute, "serverPortGrpcWithoutValute",
+		serverPortGrpcWithoutValute, "serverPortGrpcWithoutValute run in this port")
 	flag.Parse()
 
 	if pSQL == nil {
@@ -119,60 +78,16 @@ func main() {
 	defer func() {
 		pSQL.Close()
 	}()
-	//pSQL := db.Fake{}
-	RunServer(pSQL, 0, serverPortXml)
-	RunServer(pSQL, 1, serverPortXmlSlow)
-	RunServer(pSQL, 2, serverPortXmlNotAvailable)
-	RunServer(pSQL, 3, serverPortXmlWithoutValute)
 
-	RunServerGrpc(dbHost, serverPortGrpc, pSQL, 0)
-	//svXml := service.NewService(pSQL, 0)
-	//srXml := server.NewXmlServer(svXml)
-	//
-	//svXmlSlow := service.NewService(pSQL, 1)
-	//srXmlSlow := server.NewXmlServer(svXmlSlow)
-	//
-	//svXmlNotAvailable := service.NewService(pSQL, 2)
-	//srXmlNotAvailable := server.NewXmlServer(svXmlNotAvailable)
-	//
-	//svXmlWithoutValute := service.NewService(pSQL, 3)
-	//srXmlWithoutValute := server.NewXmlServer(svXmlWithoutValute)
-	//
-	//rXml := router.New()
-	//rXml.GET("/scripts/XML_daily.asp", srXml.GetDailyValueXml)
-	//
-	//rXmlSlow := router.New()
-	//rXmlSlow.GET("/scripts/XML_daily.asp", srXmlSlow.GetDailyValueXml)
-	//
-	//rXmlNotAvailable := router.New()
-	//rXmlNotAvailable.GET("/scripts/XML_daily.asp", srXmlNotAvailable.GetDailyValueXml)
-	//
-	//rXmlWithoutValute := router.New()
-	//rXmlWithoutValute.GET("/scripts/XML_daily.asp", srXmlWithoutValute.GetDailyValueXml)
-	//
-	//go func() {
-	//	if errServer := fasthttp.ListenAndServe(fmt.Sprintf(":%s", serverPortXml), rXml.Handler); errServer != nil {
-	//		log.Fatal().Err(errServer).Msg("server critical error")
-	//	}
-	//}()
-	//go func() {
-	//	if errServer := fasthttp.ListenAndServe(fmt.Sprintf(":%s", serverPortXmlSlow), rXmlSlow.Handler); errServer != nil {
-	//		log.Fatal().Err(errServer).Msg("server critical error")
-	//	}
-	//}()
-	//go func() {
-	//	if errServer := fasthttp.ListenAndServe(
-	//		fmt.Sprintf(":%s", serverPortXmlNotAvailable), rXmlNotAvailable.Handler); errServer != nil {
-	//		log.Fatal().Err(errServer).Msg("server critical error")
-	//	}
-	//}()
-	//
-	//go func() {
-	//	if errServer := fasthttp.ListenAndServe(
-	//		fmt.Sprintf(":%s", serverPortXmlWithoutValute), rXmlWithoutValute.Handler); errServer != nil {
-	//		log.Fatal().Err(errServer).Msg("server critical error")
-	//	}
-	//}()
+	app.RunServer(pSQL, 0, serverPortXml, log.Logger)
+	app.RunServer(pSQL, 1, serverPortXmlSlow, log.Logger)
+	app.RunServer(pSQL, 2, serverPortXmlNotAvailable, log.Logger)
+	app.RunServer(pSQL, 3, serverPortXmlWithoutValute, log.Logger)
+
+	app.RunServerGrpc(serverHost, serverPortGrpc, pSQL, 0)
+	app.RunServerGrpc(serverHost, serverPortGrpcSlow, pSQL, 1)
+	app.RunServerGrpc(serverHost, serverPortGrpcNotAvailable, pSQL, 2)
+	app.RunServerGrpc(serverHost, serverPortGrpcWithoutValute, pSQL, 3)
 
 	log.Info().Msg("SERVER SUCCESS START")
 	<-ctx.Done()
