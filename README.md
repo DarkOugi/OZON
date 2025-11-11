@@ -78,3 +78,19 @@ Cумма вводится в валюте получателя платежа, 
    до текущая дата, есть котировка в бд - она отдается + меняется дата на дату из бд, иначе отдается пустой xml в поле
    Date которого стоит (переданная дата - количество дней в переданном месяце)
 
+## RPC - поговорим о важном
+
+Тестировал на m1 pro
+wrk -t4 -c50 -d30s -s scripts/stressTest.lua http://localhost:8080/scripts/XML_daily.asp
+Running 30s test @ http://localhost:8080/scripts/XML_daily.asp
+4 threads and 50 connections
+
+| Thread Stats |  Avg   | Stdev  |   Max   | +/- Stdev |
+|:------------:|:------:|:------:|:-------:|:---------:|
+|   Latency    | 6.46ms | 1.08ms | 48.78ms |  96.53%   |
+|   Req/Sec    | 1.87k  | 115.81 |  2.04k  |  66.75%   |
+
+223732 requests in 30.01s, 55.69MB read  
+Requests/sec:   7454.55  
+Transfer/sec:      1.86MB  
+

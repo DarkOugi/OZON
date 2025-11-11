@@ -1,85 +1,150 @@
 {
-    "openapi": "3.0.0",
-    "info": {
-        "title": "Мок API",
-        "version": "1.0.0",
-        "description": "Мок сервис ЦБ XML_daily.asp"
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Мок API",
+    "version": "1.0.0",
+    "description": "Мок сервис ЦБ XML_daily.asp"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Рабочий вариант Мока"
     },
-    "servers": [
-        {
-            "url": "http://localhost:8080",
-            "description": "Рабочий вариант Мока"
-        },
-        {
-            "url": "http://localhost:8081",
-            "description": "Рабочий вариант Мока, но ответы с дилэем"
-        },
-        {
-            "url": "http://localhost:8082",
-            "description": "Всегда возвращает 500"
-        },
-        {
-            "url": "http://localhost:8083",
-            "description": "Всегда будет пустой XML"
-        }
-    ],
-    "paths": {
-        "/scripts/XML_daily.asp": {
-            "get": {
-                "summary": "Получить котировку валют в формате XML",
-                "description": "Возвращает актуальную котировку валют, логика повторяется ЦБ XML_daily.asp.",
-                "tags": ["currency"],
-                "parameters": [
-                    {
-                        "name": "date_req",
-                        "in": "query",
-                        "required": false,
-                        "description": "Формат DD/MM/YYYY",
-                        "schema": {
-                            "type": "string",
-                            "example": "02/03/2002"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "корректный XML",
-                        "content": {
-                            "application/xml; charset=windows-1251": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "ValCurs": {
-                                            "type": "object",
-                                            "properties": {
-                                                "Date": { "type": "string", "example": "02/03/2002" },
-                                                "name": { "type": "string", "example": "Foreign Currency Market" },
-                                                "Valute": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "object",
-                                                        "properties": {
-                                                            "ID": { "type": "string", "example": "R01235" },
-                                                            "NumCode": { "type": "string", "example": "840" },
-                                                            "CharCode": { "type": "string", "example": "USD" },
-                                                            "Nominal": { "type": "integer", "example": 1 },
-                                                            "Name": { "type": "string", "example": "US Dollar" },
-                                                            "Value": { "type": "string", "example": "33.92" }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Сервис упал"
-                    }
-                }
-            }
-        }
+    {
+      "url": "http://localhost:8081",
+      "description": "Рабочий вариант Мока, но ответы с дилэем"
+    },
+    {
+      "url": "http://localhost:8082",
+      "description": "Всегда возвращает 500"
+    },
+    {
+      "url": "http://localhost:8083",
+      "description": "Всегда будет пустой XML"
     }
+  ],
+  "paths": {
+    "/scripts/XML_daily.asp": {
+      "get": {
+        "summary": "Получить котировку валют в формате XML",
+        "description": "Возвращает актуальную котировку валют, логика повторяется ЦБ XML_daily.asp.",
+        "tags": [
+          "currency"
+        ],
+        "parameters": [
+          {
+            "name": "date_req",
+            "in": "query",
+            "required": false,
+            "description": "Формат DD/MM/YYYY",
+            "schema": {
+              "type": "string",
+              "example": "02/03/2002"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "корректный XML",
+            "content": {
+              "application/xml; charset=windows-1251": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/GoodDate"
+                    },
+                    {
+                      "$ref": "#/components/schemas/BadDate"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Сервис упал",
+            "content": {
+
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "GoodDate": {
+        "type": "object",
+        "xml": {
+          "name": "ValCurs"
+        },
+        "properties": {
+          "ValCurs": {
+            "type": "object",
+            "properties": {
+              "Date": {
+                "type": "string",
+                "example": "02/03/2002"
+              },
+              "name": {
+                "type": "string",
+                "example": "Foreign Currency Market"
+              },
+              "Valute": {
+                "nullable": true,
+                "type": "array",
+                "xml": {
+                  "name": "ValCurs",
+                  "wrapped": false
+                },
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "ID": {
+                      "type": "string",
+                      "example": "R01235"
+                    },
+                    "NumCode": {
+                      "type": "string",
+                      "example": "840"
+                    },
+                    "CharCode": {
+                      "type": "string",
+                      "example": "USD"
+                    },
+                    "Nominal": {
+                      "type": "integer",
+                      "example": 1
+                    },
+                    "Name": {
+                      "type": "string",
+                      "example": "US Dollar"
+                    },
+                    "Value": {
+                      "type": "string",
+                      "example": "33.92"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "BadDate": {
+        "type": "object",
+        "properties": {
+          "ValCurs": {
+            "type": "object",
+            "properties": {
+              "Error": {
+                "type": "string",
+                "example": "Error in parameters"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }

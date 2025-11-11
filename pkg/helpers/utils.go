@@ -75,17 +75,19 @@ func ConvertSqlDvToResponseMock(name string, dv []*entity.DailyValueSQL) *pb.Res
 		if date == "" {
 			date = el.Day
 		}
-		value = append(value, &pb.ResponseDailyValues_Value{
-			ID: el.ValuteId,
-			MetaValue: &pb.ResponseDailyValues_Value_MetaValue{
-				NumCode:   el.NumCode,
-				CharCode:  el.CharCode,
-				Nominal:   int64(el.Nominal),
-				Name:      el.Name,
-				Value:     el.Value,
-				VunitRate: el.VunitRate,
-			},
-		})
+		if el.ValuteId != "" {
+			value = append(value, &pb.ResponseDailyValues_Value{
+				ID: el.ValuteId,
+				MetaValue: &pb.ResponseDailyValues_Value_MetaValue{
+					NumCode:   el.NumCode,
+					CharCode:  el.CharCode,
+					Nominal:   int64(el.Nominal),
+					Name:      el.Name,
+					Value:     el.Value,
+					VunitRate: el.VunitRate,
+				},
+			})
+		}
 	}
 
 	return &pb.ResponseDailyValues{

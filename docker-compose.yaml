@@ -1,0 +1,71 @@
+version: "3.8"
+volumes:
+  ozon:
+services:
+  db:
+    image: postgres:13.3
+    restart: always
+    ports:
+      - ${POSTGRES_PORT}:5432
+    volumes:
+      - ${VOLUME}:/var/lib/postgresql/data
+    env_file:
+      - .env
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -d ${POSTGRES_DB} -U ${POSTGRES_USER}"
+        ]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+      start_period: 5s
+  goose:
+    build:
+      context: ./db
+      dockerfile: goose.dockerfile
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+  ozonserver:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    command: [
+      "-serverPortXml=${PORT_XML}",
+      "-serverPortXmlSlow=${PORT_XML_SLOW}",
+      "-serverPortXmlNotAvailable=${PORT_XML_NOT_AVAILABLE}",
+      "-serverPortXmlWithoutValute=${PORT_XML_WITHOUT_VALUE}",
+
+      "-serverPortGrpc=${PORT_GRPC}",
+      "-serverPortGrpcSlow=${PORT_GRPC_SLOW}",
+      "-serverPortGrpcNotAvailable=${PORT_GRPC_NOT_AVAILABLE}",
+      "-serverPortGrpcWithoutValute=${PORT_GRPC_WITHOUT_VALUE}",
+
+      "-dbHost=${POSTGRES_HOST}",
+      "-dbPort=${POSTGRES_PORT}",
+      "-dbUsername=${POSTGRES_USER}",
+      "-dbPassword=${POSTGRES_PASSWORD}",
+      "-dbName=${POSTGRES_DB}"
+    ]
+    env_file:
+      - .env
+    ports:
+      - "${PORT_XML}:${PORT_XML}"
+      - "${PORT_XML_SLOW}:${PORT_XML_SLOW}"
+      - "${PORT_XML_NOT_AVAILABLE}:${PORT_XML_NOT_AVAILABLE}"
+      - "${PORT_XML_WITHOUT_VALUE}:${PORT_XML_WITHOUT_VALUE}"
+
+      - "${PORT_GRPC}:${PORT_GRPC}"
+      - "${PORT_GRPC_SLOW}:${PORT_GRPC_SLOW}"
+      - "${PORT_GRPC_NOT_AVAILABLE}:${PORT_GRPC_NOT_AVAILABLE}"
+      - "${PORT_GRPC_WITHOUT_VALUE}:${PORT_GRPC_WITHOUT_VALUE}"
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      goose:
+        condition: service_completed_successfully

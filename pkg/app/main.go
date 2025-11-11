@@ -32,6 +32,7 @@ func RunServer(pSQL *db.PostgresDB, typeSV int, port string, log zerolog.Logger)
 	handler := fs.NewRequestHandler()
 
 	rXml.GET("/docs/{filepath:*}", func(ctx *fasthttp.RequestCtx) {
+
 		handler(ctx)
 	})
 
@@ -53,9 +54,9 @@ func LogInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServer
 	return resp, err
 }
 
-func RunServerGrpc(host, port string, pSQL *db.PostgresDB, typeSV int) {
+func RunServerGrpc(port string, pSQL *db.PostgresDB, typeSV int) {
 	grpcServe := service.NewService(pSQL, typeSV)
-	netAddr := fmt.Sprintf("%s:%s", host, port)
+	netAddr := fmt.Sprintf(":%s", port)
 	lis, err := net.Listen("tcp", netAddr)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to listen TCP")

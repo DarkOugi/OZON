@@ -20,7 +20,7 @@ var (
 	dbPassword = "0000"
 	dbName     = "ozondb"
 
-	serverHost = "localhost"
+	serverHost = "0.0.0.0"
 
 	serverPortXml              = "8080"
 	serverPortXmlSlow          = "8081"
@@ -84,10 +84,10 @@ func main() {
 	app.RunServer(pSQL, 2, serverPortXmlNotAvailable, log.Logger)
 	app.RunServer(pSQL, 3, serverPortXmlWithoutValute, log.Logger)
 
-	app.RunServerGrpc(serverHost, serverPortGrpc, pSQL, 0)
-	app.RunServerGrpc(serverHost, serverPortGrpcSlow, pSQL, 1)
-	app.RunServerGrpc(serverHost, serverPortGrpcNotAvailable, pSQL, 2)
-	app.RunServerGrpc(serverHost, serverPortGrpcWithoutValute, pSQL, 3)
+	app.RunServerGrpc(serverPortGrpc, pSQL, 0)
+	app.RunServerGrpc(serverPortGrpcSlow, pSQL, 1)
+	app.RunServerGrpc(serverPortGrpcNotAvailable, pSQL, 2)
+	app.RunServerGrpc(serverPortGrpcWithoutValute, pSQL, 3)
 
 	log.Info().Msg("SERVER SUCCESS START")
 	<-ctx.Done()

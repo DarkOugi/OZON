@@ -30,6 +30,11 @@ func (sr *ProtoServer) GetDailyValue(ctx context.Context, data *pb.RequestDate) 
 
 func (sr *XmlServer) GetDailyValueXml(ctx *fasthttp.RequestCtx) {
 	ctx.SetContentType("application/xml; charset=windows-1251")
+	// для swagger
+	ctx.Response.Header.Set("Access-Control-Allow-Origin", "*")
+	ctx.Response.Header.Set("Access-Control-Allow-Headers", "*")
+	ctx.Response.Header.Set("Access-Control-Allow-Methods", "GET")
+
 	date := string(ctx.QueryArgs().Peek("date_req"))
 
 	dv, err := sr.sv.GetDailyValue(ctx, date)
